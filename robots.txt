@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://josepcatala.github.io/lacasafrentealviento/sitemap.xml
