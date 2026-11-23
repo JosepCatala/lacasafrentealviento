@@ -532,6 +532,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-wrap: wrap;
       width: 100%;
       gap: var(--space-sm);
     }
@@ -1493,6 +1494,11 @@
               <span class="sound-bars" aria-hidden="true"><span></span><span></span><span></span></span>
               <span id="wind-sound-label">Escuchar el Stoura</span>
             </button>
+            <button type="button" id="frag-btn" class="wind-toggle" aria-pressed="false" aria-controls="frag-audio">
+              <span class="sound-bars" aria-hidden="true"><span></span><span></span><span></span></span>
+              <span id="frag-label">Escuchar fragmento del capítulo 1</span>
+            </button>
+            <audio id="frag-audio" src="audio/capitulo-1.mp3" preload="none"></audio>
 
           </div>
         </div>
@@ -3305,6 +3311,45 @@
           if (increment) { try { sessionStorage.setItem('visita-contada', '1'); } catch (e) {} }
         })
         .catch(() => { box.hidden = true; });
+    })();
+
+
+    // ═══ FRAGMENTO NARRADO (capítulo 1) ═══════════════════════════════════════
+    (function () {
+      const btn = document.getElementById('frag-btn');
+      const label = document.getElementById('frag-label');
+      const audio = document.getElementById('frag-audio');
+      if (!btn || !label || !audio) return;
+      const IDLE = 'Escuchar fragmento del capítulo 1';
+      const fmt = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+      function paint() {
+        const playing = !audio.paused && !audio.ended;
+        btn.setAttribute('aria-pressed', playing ? 'true' : 'false');
+        if (playing || (audio.currentTime > 0 && !audio.ended)) {
+          label.textContent = (playing ? 'Pausar' : 'Continuar') + ' · ' + fmt(audio.currentTime) + (audio.duration ? ' / ' + fmt(audio.duration) : '');
+        } else {
+          label.textContent = IDLE;
+        }
+      }
+      btn.addEventListener('click', () => {
+        if (!audio.paused) { audio.pause(); return; }
+        const windBtn = document.getElementById('wind-sound-btn');
+        if (windBtn && windBtn.getAttribute('aria-pressed') === 'true' && typeof toggleWindAudio === 'function') toggleWindAudio();
+        const p = audio.play(); if (p && p.catch) p.catch(() => {});
+      });
+      // Si se activa el viento (Stoura), se pausa el fragmento
+      const wb = document.getElementById('wind-sound-btn');
+      if (wb) wb.addEventListener('click', () => { if (wb.getAttribute('aria-pressed') === 'true' && !audio.paused) audio.pause(); });
+      audio.addEventListener('play', paint);
+      audio.addEventListener('pause', paint);
+      audio.addEventListener('timeupdate', paint);
+      audio.addEventListener('loadedmetadata', paint);
+      audio.addEventListener('ended', () => { audio.currentTime = 0; paint(); });
+      audio.addEventListener('error', () => {
+        label.textContent = 'No se ha podido cargar el fragmento';
+        btn.setAttribute('aria-pressed', 'false');
+        setTimeout(() => { label.textContent = IDLE; }, 4000);
+      });
     })();
 
     // ═══ ENGINE & INITIALIZATION ══════════════════════════════════════════════
